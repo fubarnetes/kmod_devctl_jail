@@ -1,4 +1,6 @@
 # devctl_jail.ko
+[![Build Status](https://api.cirrus-ci.com/github/fubarnetes/kmod_devctl_jail.svg)](https://cirrus-ci.com/github/fubarnetes/kmod_devctl_jail)
+
 Kernel module providing devctl notifications for jails.
 
 # Is it any good?
