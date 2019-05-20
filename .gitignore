@@ -1,0 +1,13 @@
+*.ko
+*.o
+export_syms
+machine
+x86
+amd64
+arm
+arm64
+i386
+mips
+powerpc
+riscv
+sparc64
