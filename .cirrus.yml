@@ -1,0 +1,10 @@
+task:
+  freebsd_instance:
+    matrix:
+      image: freebsd-12-0-release-amd64
+      image: freebsd-11-2-release-amd64
+  build_script: make
+  install_script: make install
+  test_script: |
+    kldload devctl_jail.ko
+    kldunload devctl_jail.ko
