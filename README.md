@@ -28,4 +28,4 @@ May 20 20:50:54 blackbox jail[50626]: Jail JID=1 removed
 
 If you are writing a jail manager however, you might be interested in getting the notifications yourself.
 You can just connect to the `SOCK_SEQPACKET` socket at `/var/run/devd.seqpacket.pipe` to receive raw
-notifications multiplexed by `devd`.g
+notifications multiplexed by `devd`.

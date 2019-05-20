@@ -8,6 +8,7 @@ task:
     make install
     cp devd.conf /usr/local/etc/devd/jail.conf
     service devd restart
+    mkdir -p /usr/local/etc/syslog.d
     cp syslogd.conf /usr/local/etc/syslog.d/jail.conf
     touch /var/log/jail
     service syslogd restart
