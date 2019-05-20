@@ -7,4 +7,8 @@ task:
   install_script: make install
   test_script: |
     kldload devctl_jail.ko
+    jail -c name=testjail jid=1000 persist
+    jail -m jid=1000 name=new_name
+    jexec 1000 /bin/echo hello world
+    jail -r 1000
     kldunload devctl_jail.ko
