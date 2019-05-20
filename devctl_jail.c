@@ -1,3 +1,4 @@
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/module.h>
 #include <sys/systm.h>  /* uprintf */
@@ -8,8 +9,15 @@
 #include <sys/proc.h>
 #include <sys/lock.h>
 #include <sys/sx.h>
+#include <sys/malloc.h>
+#include <sys/sbuf.h>
+#include "devctl.h"
+
+#define DEVCTL_JAIL_LOGSIZE 128
 
 static unsigned devctl_jail_osd_jail_slot;
+
+static MALLOC_DEFINE(M_DEVCTL_JAIL, "devctl_jail", "Devctl jail notifications");
 
 /*
  * Jail OSD methods
@@ -17,8 +25,21 @@ static unsigned devctl_jail_osd_jail_slot;
 static int
 devctl_jail_prison_create(void *obj, void *data __unused)
 {
-  //struct prison* pr = obj;
-  uprintf("created jail");
+  struct prison* pr = obj;
+  struct sbuf sb;
+  char *buf;
+
+  buf = malloc(DEVCTL_JAIL_LOGSIZE, M_DEVCTL_JAIL, M_NOWAIT);
+  if (buf == NULL) {
+    printf("devctl_jail_prison_create: out of memory\n");
+    return (0);
+  }
+  sbuf_new(&sb, buf, DEVCTL_JAIL_LOGSIZE, SBUF_FIXEDLEN);
+  sbuf_printf(&sb, "jid=%d", pr->pr_id);
+  sbuf_finish(&sb);
+  devctl_notify_f("kernel", "jail", "created", sbuf_data(&sb), M_NOWAIT);
+  sbuf_delete(&sb);
+  free(buf, M_DEVCTL_JAIL);
   return (0);
 }
 
@@ -32,15 +53,26 @@ static int
 devctl_jail_prison_set(void *obj, void *data __unused)
 {
   struct prison* pr = obj;
-  uprintf("set jail %d", pr->pr_id);
+  struct sbuf sb;
+  char *buf;
+
+  buf = malloc(DEVCTL_JAIL_LOGSIZE, M_DEVCTL_JAIL, M_NOWAIT);
+  if (buf == NULL) {
+    printf("devctl_jail_prison_set: out of memory\n");
+    return (0);
+  }
+  sbuf_new(&sb, buf, DEVCTL_JAIL_LOGSIZE, SBUF_FIXEDLEN);
+  sbuf_printf(&sb, "jid=%d", pr->pr_id);
+  sbuf_finish(&sb);
+  devctl_notify_f("kernel", "jail", "updated", sbuf_data(&sb), M_NOWAIT);
+  sbuf_delete(&sb);
+  free(buf, M_DEVCTL_JAIL);
   return (0);
 }
 
 static int
 devctl_jail_prison_get(void *obj, void *data __unused)
 {
-  struct prison* pr = obj;
-  uprintf("get jail %d", pr->pr_id);
   return (0);
 }
 
@@ -48,7 +80,19 @@ static int
 devctl_jail_prison_remove(void *obj, void *data __unused)
 {
   struct prison* pr = obj;
-  uprintf("remove jail %d", pr->pr_id);
+  struct sbuf sb;
+  char *buf;
+
+  buf = malloc(DEVCTL_JAIL_LOGSIZE, M_DEVCTL_JAIL, M_NOWAIT);
+  if (buf == NULL) {
+    return (0);
+  }
+  sbuf_new(&sb, buf, DEVCTL_JAIL_LOGSIZE, SBUF_FIXEDLEN);
+  sbuf_printf(&sb, "jid=%d", pr->pr_id);
+  sbuf_finish(&sb);
+  devctl_notify_f("kernel", "jail", "removed", sbuf_data(&sb), M_NOWAIT);
+  sbuf_delete(&sb);
+  free(buf, M_DEVCTL_JAIL);
   return (0);
 }
 
@@ -57,7 +101,20 @@ devctl_jail_prison_attach(void *obj, void *data __unused)
 {
   struct prison* pr = obj;
   struct thread* td = data;
-  uprintf("attached PID %d to jail %d", td->td_proc->p_pid, pr->pr_id);
+  struct sbuf sb;
+  char *buf;
+
+  buf = malloc(DEVCTL_JAIL_LOGSIZE, M_DEVCTL_JAIL, M_NOWAIT);
+  if (buf == NULL) {
+    printf("devctl_jail_prison_attach: out of memory\n");
+    return (0);
+  }
+  sbuf_new(&sb, buf, DEVCTL_JAIL_LOGSIZE, SBUF_FIXEDLEN);
+  sbuf_printf(&sb, "jid=%d pid=%d", pr->pr_id, td->td_proc->p_pid);
+  sbuf_finish(&sb);
+  devctl_notify_f("kernel", "jail", "attached", sbuf_data(&sb), M_NOWAIT);
+  sbuf_delete(&sb);
+  free(buf, M_DEVCTL_JAIL);
   return (0);
 }
 
