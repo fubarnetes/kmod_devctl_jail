@@ -45,6 +45,8 @@
 #include <sys/sx.h>
 #include <sys/malloc.h>
 #include <sys/sbuf.h>
+#include <sys/mount.h> /* vfs_getopt */
+#include <sys/queue.h>
 #include "devctl.h"
 
 #define DEVCTL_JAIL_LOGSIZE 128
@@ -84,9 +86,12 @@ devctl_jail_prison_check(void *obj __unused, void *data __unused)
 }
 
 static int
-devctl_jail_prison_set(void *obj, void *data __unused)
+devctl_jail_prison_set(void *obj, void *data)
 {
   struct prison* pr = obj;
+  struct vfsoptlist *opts = data;
+  struct vfsopt *opt;
+  int firstopt = 0;
   struct sbuf sb;
   char *buf;
 
@@ -97,6 +102,20 @@ devctl_jail_prison_set(void *obj, void *data __unused)
   }
   sbuf_new(&sb, buf, DEVCTL_JAIL_LOGSIZE, SBUF_FIXEDLEN);
   sbuf_printf(&sb, "jid=%d", pr->pr_id);
+
+  TAILQ_FOREACH(opt, opts, link) {
+    /* errmsg isn't a jail parameter, so we exclude that. */
+    if (strcmp(opt->name, "errmsg") == 0)
+      continue;
+
+    if (!firstopt) {
+      sbuf_printf(&sb, " params=%s", opt->name);
+      firstopt = 1;
+    }
+
+    sbuf_printf(&sb, ",%s", opt->name);
+  }
+
   sbuf_finish(&sb);
   devctl_notify_f("kernel", "jail", "updated", sbuf_data(&sb), M_NOWAIT);
   sbuf_delete(&sb);
