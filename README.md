@@ -18,7 +18,7 @@ cp syslogd.conf /usr/local/etc/syslog.d/jail.conf
 touch /var/log/jail
 systemctl restart syslogd
 cp devd.conf /usr/local/etc/devd/jail.conf
-systemctl restart devd
+service restart devd
 ```
 
 This will give you some logging that looks like this:
